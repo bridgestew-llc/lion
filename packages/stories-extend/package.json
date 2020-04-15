@@ -1,0 +1,36 @@
+{
+  "name": "stories-extend",
+  "version": "0.1.0",
+  "description": "Allows extending lion stories",
+  "author": "ing-bank",
+  "homepage": "https://github.com/ing-bank/lion/",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ing-bank/lion.git",
+    "directory": "packages/stories-extend"
+  },
+  "scripts": {
+    "prepublishOnly": "../../scripts/npm-prepublish.js",
+    "test": "npm run test:node",
+    "test:node": "mocha test-node",
+    "test:watch": "mocha test-node --watch"
+  },
+  "keywords": [
+    "storybook",
+    "demos"
+  ],
+  "main": "index.js",
+  "files": [
+    "src",
+    "test-node",
+    "*.js"
+  ],
+  "dependencies": {
+    "babel-core": "^6.26.3"
+  },
+  "devDependencies": {}
+}
