@@ -30,7 +30,8 @@
     "*.js"
   ],
   "dependencies": {
-    "babel-core": "^6.26.3"
+    "babel-core": "^6.26.3",
+    "babel-plugin-tester": "^9.0.1"
   },
   "devDependencies": {}
 }
