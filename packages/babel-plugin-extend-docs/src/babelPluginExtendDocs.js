@@ -3,8 +3,7 @@
 // -1 because filepath is an absolute path starting with '/' and we turn it into a relative path without a '/' at the start
 const getFolderDepth = filePath => [...filePath.matchAll(new RegExp('/', 'g'))].length - 1;
 
-const replaceImportPath = ({ path, className, opts, types: t }) => {
-  const changeObj = opts.changes.find(change => change.name === className);
+const replaceImportPath = ({ path, changeObj, opts, types: t }) => {
   const { fromPaths, toPath } = changeObj.variable;
 
   // Verify that our import path is included as one of the fromPaths from the config
@@ -20,9 +19,8 @@ const replaceImportPath = ({ path, className, opts, types: t }) => {
   }
 };
 
-const replaceImported = ({ specifier, className, opts, types: t }) => {
+const replaceImported = ({ specifier, changeObj, types: t }) => {
   if (t.isIdentifier(specifier.imported) && specifier.type === 'ImportSpecifier') {
-    const changeObj = opts.changes.find(change => change.name === className);
     const variableTo = changeObj.variable.to;
 
     // Don't override Bar in import { LionFoo as Bar }, only for import { LionFoo as LionFoo } which is the equivalent of import { LionFoo }
@@ -35,9 +33,9 @@ const replaceImported = ({ specifier, className, opts, types: t }) => {
 
 const replaceTagImports = ({ path, opts, types: t }) => {
   opts.changes.forEach(change => {
-    const foundFromPath = change.tag.fromPaths.find(fromPath =>
-      path.node.source.value.match(new RegExp(fromPath)),
-    );
+    const foundFromPath =
+      change.tag &&
+      change.tag.fromPaths.find(fromPath => path.node.source.value.match(new RegExp(fromPath)));
 
     if (foundFromPath) {
       path.node.source = t.stringLiteral(
@@ -51,7 +49,7 @@ const replaceTemplateElements = ({ path, opts }) => {
   const replaceTag = (value, from, to) => value.replace(new RegExp(from, 'g'), to);
   path.node.quasi.quasis.forEach(quasi => {
     opts.changes.forEach(change => {
-      if (quasi.value.raw.match(change.tag.from)) {
+      if (change.tag && quasi.value.raw.match(change.tag.from)) {
         quasi.value.raw = replaceTag(quasi.value.raw, change.tag.from, change.tag.to);
         if (typeof quasi.value.cooked === 'string') {
           quasi.value.cooked = replaceTag(quasi.value.cooked, change.tag.from, change.tag.to);
@@ -69,14 +67,17 @@ module.exports = ({ types: t }) => ({
      * 2) replace the path (./src/index.js -> ../../../index.js)
      */
     ImportDeclaration(path, state) {
-      let className = '';
       if (path.node.specifiers.length > 0) {
         path.node.specifiers.forEach(specifier => {
-          if (specifier.imported.name.match(new RegExp('Lion.*'))) {
-            className = specifier.imported.name;
-            replaceImported({ specifier, className, opts: state.opts, types: t });
+          // TODO: Depend on config, not hardcoded
+
+          const changeObj = state.opts.changes.find(
+            change => change.name === specifier.imported.name,
+          );
+          if (changeObj) {
+            replaceImported({ specifier, changeObj, types: t });
             if (t.isLiteral(path.node.source)) {
-              replaceImportPath({ path, className, opts: state.opts, types: t });
+              replaceImportPath({ path, changeObj, opts: state.opts, types: t });
             }
           }
         });

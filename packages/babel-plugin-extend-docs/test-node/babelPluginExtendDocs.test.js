@@ -7,15 +7,24 @@ const baseConfig = {
       name: 'LionInput',
       variable: {
         from: 'LionInput',
-        to: 'WoofInput',
+        to: 'WolfInput',
         fromPaths: ['index.js', 'src/LionInput.js', '@lion/input'],
         toPath: 'index.js',
       },
       tag: {
         from: 'lion-input',
-        to: 'woof-input',
+        to: 'wolf-input',
         fromPaths: ['lion-input.js', '@lion/input/lion-input.js'],
-        toPath: '__element-definitions/woof-input.js',
+        toPath: '__element-definitions/wolf-input.js',
+      },
+    },
+    {
+      name: 'localize',
+      variable: {
+        from: 'localize',
+        to: 'localize',
+        fromPaths: ['index.js', 'src/localize.js', '@lion/localize'],
+        toPath: 'localize.js',
       },
     },
   ],
@@ -33,11 +42,11 @@ pluginTester({
   tests: {
     'replaces local src class imports (1)': {
       code: `import { LionInput } from './src/LionInput.js';`,
-      output: `import { WoofInput } from '../../../index.js';`,
+      output: `import { WolfInput } from '../../../index.js';`,
     },
     'replaces local src class imports (2)': {
       code: `import { LionInput } from './src/LionInput.js';`,
-      output: `import { WoofInput } from '../../../../index.js';`,
+      output: `import { WolfInput } from '../../../../index.js';`,
       pluginOptions: {
         ...baseConfig,
         filePath: '/node_module/@lion/input/docs/README.md',
@@ -45,23 +54,43 @@ pluginTester({
     },
     'replaces local src class imports (3)': {
       code: `import { LionInput as Foo } from './src/LionInput.js';`,
-      output: `import { WoofInput as Foo } from '../../../index.js';`,
+      output: `import { WolfInput as Foo } from '../../../index.js';`,
     },
     'replaces local src class imports (4)': {
       skip: true, // TODO: Handle this edge case
       code: `import { LionInput, someHelper } from './src/LionInput.js';`,
       output: `
-        import { WoofInput } from '../../../index.js';
+        import { WolfInput } from '../../../index.js';
         import { someHelper } from './src/LionInput.js';
+      `,
+    },
+    'replaces local src class imports (5)': {
+      skip: true, // TODO: Handle this edge case
+      code: `import { LionInput, LionFoo, LionBar, someHelper } from '@lion/foo';`,
+      output: `
+        import { WolfFoo, WolfBar } from '../../../index.js';
+        import { WolfBaz } from '../../../somewhere-else.js';
+        import { someHelper } from '@lion/foo';
+      `,
+    },
+    'replaces local src class imports (6)': {
+      // only: true,
+      code: `
+        import { localize } from '@lion/localize';
+        import { LionInput } from '@lion/input';
+      `,
+      output: `
+        import { localize } from '../../../localize.js';
+        import { WolfInput } from '../../../index.js';
       `,
     },
     'replaces local index.js class imports (1)': {
       code: `import { LionInput } from './index.js';`,
-      output: `import { WoofInput } from '../../../index.js';`,
+      output: `import { WolfInput } from '../../../index.js';`,
     },
     'replaces local index.js class imports (2)': {
       code: `import { LionInput } from './index.js';`,
-      output: `import { WoofInput } from '../../../../index.js';`,
+      output: `import { WolfInput } from '../../../../index.js';`,
       pluginOptions: {
         ...baseConfig,
         filePath: '/node_module/@lion/input/docs/README.md',
@@ -69,7 +98,7 @@ pluginTester({
     },
     'replaces `@lion` class imports': {
       code: `import { LionInput } from '@lion/input';`,
-      output: `import { WoofInput } from '../../../index.js';`,
+      output: `import { WolfInput } from '../../../index.js';`,
     },
     'does NOT replace imports that do not start with Lion': {
       code: `import { FooInput } from '@lion/input';`,
@@ -78,11 +107,11 @@ pluginTester({
 
     'replaces local tag imports': {
       code: `import './lion-input.js';`,
-      output: `import '../../../__element-definitions/woof-input.js';`,
+      output: `import '../../../__element-definitions/wolf-input.js';`,
     },
     'replaces `@lion` tag imports': {
       code: `import '@lion/input/lion-input.js';`,
-      output: `import '../../../__element-definitions/woof-input.js';`,
+      output: `import '../../../__element-definitions/wolf-input.js';`,
     },
 
     'replaces tags in function occurrences': {
@@ -93,7 +122,7 @@ pluginTester({
       `,
       /* Babel for some reason removes the new line here */
       output: `
-        export const main = () => html\` <woof-input label="First Name"></woof-input> \`;
+        export const main = () => html\` <wolf-input label="First Name"></wolf-input> \`;
       `,
     },
 
@@ -114,10 +143,10 @@ pluginTester({
         class Foo extends LitElement {
           render() {
             return html\`
-              <woof-input some-attribute>
+              <wolf-input some-attribute>
                 <p>light dom</p>
-                <woof-input></woof-input>
-              </woof-input>
+                <wolf-input></wolf-input>
+              </wolf-input>
             \`;
           }
         }
