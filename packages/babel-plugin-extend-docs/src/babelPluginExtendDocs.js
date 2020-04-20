@@ -35,7 +35,7 @@ const replaceTagImports = ({ path, opts, types: t }) => {
   opts.changes.forEach(change => {
     const foundFromPath =
       change.tag &&
-      change.tag.fromPaths.find(fromPath => path.node.source.value.match(new RegExp(fromPath)));
+      change.tag.fromPaths.find(fromPath => path.node.source.value.match(new RegExp(fromPath))); // TODO: don't just match, be more strict here, it should be for the most part the exact `same` path
 
     if (foundFromPath) {
       path.node.source = t.stringLiteral(
@@ -59,6 +59,20 @@ const replaceTemplateElements = ({ path, opts }) => {
   });
 };
 
+const generateImportStatements = () =>
+  /**
+   * TODO: implement. Goal is to:
+   * 1) detect named imports that are to be replaced (checks the config) and store them in a data obj
+   * 2) remove those named imports (remove entire statement if that's the only import)
+   * 3) In this function we take the stored imports, and compile a list of import statements (combine imports from the same src)
+   */
+  [];
+const insertImportStatements = (imports, state) => {
+  imports.forEach(imp => {
+    state.path.insertBefore(imp);
+  });
+};
+
 module.exports = ({ types: t }) => ({
   visitor: {
     /**
@@ -67,10 +81,14 @@ module.exports = ({ types: t }) => ({
      * 2) replace the path (./src/index.js -> ../../../index.js)
      */
     ImportDeclaration(path, state) {
+      // If a filePath is not passed explicitly by the user, take the filename provided by babel
+      // and subtract the rootpath from it, to get the desired filePath relative to the root.
+      if (!state.opts.filePath) {
+        state.opts.filePath = state.file.opts.filename.replace(state.opts.rootPath, '');
+      }
+
       if (path.node.specifiers.length > 0) {
         path.node.specifiers.forEach(specifier => {
-          // TODO: Depend on config, not hardcoded
-
           const changeObj = state.opts.changes.find(
             change => change.name === specifier.imported.name,
           );
@@ -90,5 +108,9 @@ module.exports = ({ types: t }) => ({
         replaceTemplateElements({ path, opts: state.opts });
       }
     },
+  },
+  post(state) {
+    const imports = generateImportStatements();
+    insertImportStatements(imports, state);
   },
 });

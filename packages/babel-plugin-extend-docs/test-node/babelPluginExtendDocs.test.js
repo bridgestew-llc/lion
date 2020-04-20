@@ -19,6 +19,21 @@ const baseConfig = {
       },
     },
     {
+      name: 'LionButton',
+      variable: {
+        from: 'LionButton',
+        to: 'WolfButton',
+        fromPaths: ['index.js', 'src/LionButton.js', '@lion/button'],
+        toPath: 'index.js',
+      },
+      tag: {
+        from: 'lion-button',
+        to: 'wolf-button',
+        fromPaths: ['lion-button.js', '@lion/button/lion-button.js'],
+        toPath: '__element-definitions/wolf-button.js',
+      },
+    },
+    {
       name: 'localize',
       variable: {
         from: 'localize',
@@ -36,7 +51,6 @@ pluginTester({
   pluginOptions: {
     ...baseConfig,
     filePath: '/node_module/@lion/input/README.md',
-    rootPath: '/node_module/@lion/input/',
   },
   snapshot: false,
   tests: {
@@ -58,10 +72,10 @@ pluginTester({
     },
     'replaces local src class imports (4)': {
       skip: true, // TODO: Handle this edge case
-      code: `import { LionInput, someHelper } from './src/LionInput.js';`,
+      code: `import someDefaultHelper, { LionInput, someHelper } from './src/LionInput.js';`,
       output: `
         import { WolfInput } from '../../../index.js';
-        import { someHelper } from './src/LionInput.js';
+        import someDefaultHelper, { someHelper } from './src/LionInput.js';
       `,
     },
     'replaces local src class imports (5)': {
@@ -74,7 +88,6 @@ pluginTester({
       `,
     },
     'replaces local src class imports (6)': {
-      // only: true,
       code: `
         import { localize } from '@lion/localize';
         import { LionInput } from '@lion/input';
