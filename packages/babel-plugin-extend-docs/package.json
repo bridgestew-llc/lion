@@ -1,7 +1,7 @@
 {
-  "name": "stories-extend",
+  "name": "babel-plugin-extend-docs",
   "version": "0.1.0",
-  "description": "Allows extending lion stories",
+  "description": "Babel plugin that allows extending lion docs",
   "author": "ing-bank",
   "homepage": "https://github.com/ing-bank/lion/",
   "license": "MIT",
@@ -11,7 +11,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/ing-bank/lion.git",
-    "directory": "packages/stories-extend"
+    "directory": "packages/babel-plugin-extend-docs"
   },
   "scripts": {
     "prepublishOnly": "../../scripts/npm-prepublish.js",
@@ -29,9 +29,7 @@
     "test-node",
     "*.js"
   ],
-  "dependencies": {
-    "babel-core": "^6.26.3",
+  "devDependencies": {
     "babel-plugin-tester": "^9.0.1"
-  },
-  "devDependencies": {}
+  }
 }

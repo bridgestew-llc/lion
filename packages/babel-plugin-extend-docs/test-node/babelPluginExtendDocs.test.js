@@ -1,5 +1,5 @@
 const pluginTester = require('babel-plugin-tester').default;
-const babelPluginRewriteStoryImports = require('../src/babelPluginRewriteStoryImports.js');
+const babelPluginExtendDocs = require('../src/babelPluginExtendDocs.js');
 
 const baseConfig = {
   changes: [
@@ -8,13 +8,13 @@ const baseConfig = {
       variable: {
         from: 'LionInput',
         to: 'WoofInput',
-        fromPaths: ['index.js', 'src/LionInput.js'],
+        fromPaths: ['index.js', 'src/LionInput.js', '@lion/input'],
         toPath: 'index.js',
       },
       tag: {
         from: 'lion-input',
         to: 'woof-input',
-        fromPaths: ['lion-input.js'],
+        fromPaths: ['lion-input.js', '@lion/input/lion-input.js'],
         toPath: '__element-definitions/woof-input.js',
       },
     },
@@ -22,8 +22,8 @@ const baseConfig = {
 };
 
 pluginTester({
-  plugin: babelPluginRewriteStoryImports,
-  pluginName: 'RewriteStoryImports',
+  plugin: babelPluginExtendDocs,
+  pluginName: 'ExtendDocs',
   pluginOptions: {
     ...baseConfig,
     filePath: '/node_module/@lion/input/README.md',
@@ -69,12 +69,16 @@ pluginTester({
     },
     'replaces `@lion` class imports': {
       code: `import { LionInput } from '@lion/input';`,
-      output: `import { WoofInput } from '../../../../index.js';`,
+      output: `import { WoofInput } from '../../../index.js';`,
+    },
+    'does NOT replace imports that do not start with Lion': {
+      code: `import { FooInput } from '@lion/input';`,
+      output: `import { FooInput } from '@lion/input';`,
     },
 
     'replaces local tag imports': {
       code: `import './lion-input.js';`,
-      output: `import '../../../../__element-definitions/woof-input.js';`,
+      output: `import '../../../__element-definitions/woof-input.js';`,
     },
     'replaces `@lion` tag imports': {
       code: `import '@lion/input/lion-input.js';`,
@@ -87,10 +91,9 @@ pluginTester({
           <lion-input label="First Name"></lion-input>
         \`;
       `,
+      /* Babel for some reason removes the new line here */
       output: `
-        export const main = () => html\`
-          <woof-input label="First Name"></woof-input>
-        \`;
+        export const main = () => html\` <woof-input label="First Name"></woof-input> \`;
       `,
     },
 
