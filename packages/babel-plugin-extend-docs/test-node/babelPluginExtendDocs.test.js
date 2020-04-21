@@ -71,21 +71,46 @@ pluginTester({
       output: `import { WolfInput as Foo } from '../../../index.js';`,
     },
     'replaces local src class imports (4)': {
-      skip: true, // TODO: Handle this edge case
-      code: `import someDefaultHelper, { LionInput, someHelper } from './src/LionInput.js';`,
+      code: `
+        import someDefaultHelper, { LionInput, someHelper } from './src/LionInput.js';
+        import { LionButton } from '@lion/button';
+      `,
       output: `
-        import { WolfInput } from '../../../index.js';
+        import { WolfInput, WolfButton } from '../../../index.js';
         import someDefaultHelper, { someHelper } from './src/LionInput.js';
       `,
     },
     'replaces local src class imports (5)': {
-      skip: true, // TODO: Handle this edge case
-      code: `import { LionInput, LionFoo, LionBar, someHelper } from '@lion/foo';`,
+      code: `import { LionInput, LionFoo, LionBar, someHelper } from '@lion/input';`,
       output: `
-        import { WolfFoo, WolfBar } from '../../../index.js';
-        import { WolfBaz } from '../../../somewhere-else.js';
-        import { someHelper } from '@lion/foo';
+        import { WolfInput, WolfFoo } from '../../../index.js';
+        import { WolfBar } from '../../../somewhere-else.js';
+        import { someHelper } from '@lion/input';
       `,
+      pluginOptions: {
+        changes: [
+          ...baseConfig.changes,
+          {
+            name: 'LionFoo',
+            variable: {
+              from: 'LionFoo',
+              to: 'WolfFoo',
+              fromPaths: ['@lion/input'],
+              toPath: 'index.js',
+            },
+          },
+          {
+            name: 'LionBar',
+            variable: {
+              from: 'LionBar',
+              to: 'WolfBar',
+              fromPaths: ['@lion/input'],
+              toPath: 'somewhere-else.js',
+            },
+          },
+        ],
+        filePath: '/node_module/@lion/input/README.md',
+      },
     },
     'replaces local src class imports (6)': {
       code: `
@@ -164,6 +189,10 @@ pluginTester({
           }
         }
       `,
+    },
+    "doesn't care about namespace imports": {
+      code: `import * as all from '@lion/input';`,
+      output: `import * as all from '@lion/input';`,
     },
   },
 });
