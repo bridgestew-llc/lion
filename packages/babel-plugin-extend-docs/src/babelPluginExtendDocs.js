@@ -6,14 +6,17 @@ const getFolderDepth = filePath => [...filePath.match(new RegExp('/', 'g'))].len
 /**
  * Example: import someDefaultHelper, { LionInput, someHelper } from './src/LionInput.js';
  * We should filter out the imports that we need to replace and store for now (LionInput).
- * Then in the post step, we can create the necessary new imports
+ * Then in the exit step, we can create the necessary new imports and insert them
  */
-const detectImported = ({ path, opts, types: t, importedStorage }) => {
+const detectImported = ({ path, state, opts, types: t }) => {
   path.node.specifiers = path.node.specifiers.filter(specifier => {
     if (t.isIdentifier(specifier.imported) && specifier.type === 'ImportSpecifier') {
       const changeObj = opts.changes.find(change => change.name === specifier.imported.name);
       // TODO: Do we need to add a check here to see if path.node.source.value matches one of the changeObj.variable.fromPaths? Do we care?
-      let importAs; // keep undefined in case we dont have a special local that is different from imported
+
+      // keep undefined in case we dont have a special local that is different from imported
+      let importAs;
+
       if (
         specifier.local &&
         specifier.local.name &&
@@ -23,7 +26,7 @@ const detectImported = ({ path, opts, types: t, importedStorage }) => {
       }
 
       if (changeObj) {
-        importedStorage.push({
+        state.importedStorage.push({
           importName: specifier.imported.name,
           importAs,
           changeObj,
@@ -40,7 +43,7 @@ const detectImported = ({ path, opts, types: t, importedStorage }) => {
   }
 };
 
-const replaceTagImports = ({ path, opts, types: t }) => {
+const replaceTagImports = ({ path, state, opts, types: t }) => {
   opts.changes.forEach(change => {
     const foundFromPath =
       change.tag &&
@@ -48,7 +51,7 @@ const replaceTagImports = ({ path, opts, types: t }) => {
 
     if (foundFromPath) {
       path.node.source = t.stringLiteral(
-        `${'../'.repeat(getFolderDepth(opts.filePath))}${change.tag.toPath}`,
+        `${'../'.repeat(getFolderDepth(state.filePath))}${change.tag.toPath}`,
       );
     }
   });
@@ -68,9 +71,9 @@ const replaceTemplateElements = ({ path, opts }) => {
   });
 };
 
-const generateImportStatements = ({ importedStorage, filePath, types: t }) => {
+const generateImportStatements = ({ state, types: t }) => {
   const newImportsMap = new Map();
-  importedStorage.forEach(imp => {
+  state.importedStorage.forEach(imp => {
     newImportsMap.set(imp.changeObj.variable.toPath, [
       ...(newImportsMap.get(imp.changeObj.variable.toPath) || []),
       {
@@ -81,7 +84,7 @@ const generateImportStatements = ({ importedStorage, filePath, types: t }) => {
   });
 
   return Array.from(newImportsMap).map(value => {
-    const source = t.stringLiteral(`${'../'.repeat(getFolderDepth(filePath))}${value[0]}`);
+    const source = t.stringLiteral(`${'../'.repeat(getFolderDepth(state.filePath))}${value[0]}`);
     const importSpecifiers = value[1].map(subValue =>
       t.importSpecifier(t.identifier(subValue.importAs), t.identifier(subValue.importName)),
     );
@@ -94,16 +97,7 @@ const insertImportStatements = ({ imports, path }) => {
 };
 
 module.exports = ({ types: t }) => ({
-  pre() {
-    this.importedStorage = [];
-    this.filePath = '';
-  },
   visitor: {
-    /**
-     * Finds import declarations and
-     * 1) replace the importeds (LionX -> WolfX)
-     * 2) replace the path (./src/index.js -> ../../../index.js)
-     */
     ImportDeclaration(path, state) {
       // If a filePath is not passed explicitly by the user, take the filename provided by babel
       // and subtract the rootpath from it, to get the desired filePath relative to the root.
@@ -111,14 +105,14 @@ module.exports = ({ types: t }) => ({
         state.opts.filePath = state.file.opts.filename.replace(state.opts.rootPath, '');
       }
 
-      if (!this.filePath) {
-        this.filePath = state.opts.filePath;
+      if (!state.filePath) {
+        state.filePath = state.opts.filePath;
       }
 
       if (path.node.specifiers.length > 0) {
-        detectImported({ path, opts: state.opts, types: t, importedStorage: this.importedStorage });
+        detectImported({ path, state, opts: state.opts, types: t });
       } else {
-        replaceTagImports({ path, opts: state.opts, types: t });
+        replaceTagImports({ path, state, opts: state.opts, types: t });
       }
     },
     TaggedTemplateExpression(path, state) {
@@ -127,14 +121,12 @@ module.exports = ({ types: t }) => ({
       }
     },
     Program: {
-      // Using unnamed function because of `this` binding importance
-      // eslint-disable-next-line object-shorthand, func-names
-      exit: function (path) {
-        const imports = generateImportStatements({
-          importedStorage: this.importedStorage,
-          filePath: this.filePath,
-          types: t,
-        });
+      enter: (path, state) => {
+        state.importedStorage = [];
+        state.filePath = '';
+      },
+      exit: (path, state) => {
+        const imports = generateImportStatements({ state, types: t });
         insertImportStatements({ imports, path });
       },
     },
