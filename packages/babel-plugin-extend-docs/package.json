@@ -15,6 +15,8 @@
   },
   "scripts": {
     "prepublishOnly": "../../scripts/npm-prepublish.js",
+    "start": "es-dev-server -c demo/server.config.js --root-dir ../../",
+    "start:no-babel": "es-dev-server -c demo/server.no-babel.config.js --root-dir ../../",
     "test": "npm run test:node",
     "test:node": "mocha test-node",
     "test:watch": "mocha test-node --watch"

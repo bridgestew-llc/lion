@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+const fs = require('fs');
 
 // -1 because filepath is an absolute path starting with '/' and we turn it into a relative path without a '/' at the start
 const getFolderDepth = filePath => [...filePath.match(new RegExp('/', 'g'))].length - 1;
@@ -101,13 +102,9 @@ module.exports = ({ types: t }) => ({
     ImportDeclaration(path, state) {
       // If a filePath is not passed explicitly by the user, take the filename provided by babel
       // and subtract the rootpath from it, to get the desired filePath relative to the root.
-      if (!state.opts.filePath) {
-        state.opts.filePath = state.file.opts.filename.replace(state.opts.rootPath, '');
-      }
-
-      if (!state.filePath) {
-        state.filePath = state.opts.filePath;
-      }
+      state.filePath = state.opts.__filePath
+        ? state.opts.__filePath
+        : state.file.opts.filename.replace(state.opts.rootPath, '');
 
       if (path.node.specifiers.length > 0) {
         detectImported({ path, state, opts: state.opts, types: t });
@@ -122,6 +119,30 @@ module.exports = ({ types: t }) => ({
     },
     Program: {
       enter: (path, state) => {
+        // if __filePath is provided directly then we assume you are a test or you know what you are doing
+        if (!state.opts.__filePath) {
+          if (!state.opts.rootPath) {
+            throw new Error(
+              `babel-plugin-extend-docs: You need to provide a rootPath option (string)\nExample: rootPath: path.resolve('.')`,
+            );
+          }
+          if (!fs.existsSync(state.opts.rootPath)) {
+            throw new Error(
+              `babel-plugin-extend-docs: The provided rootPath "${state.opts.rootPath}" does not exist.`,
+            );
+          }
+          if (!fs.lstatSync(state.opts.rootPath).isDirectory()) {
+            throw new Error(
+              `babel-plugin-extend-docs: The provided rootPath "${state.opts.rootPath}" is not a directory.`,
+            );
+          }
+        }
+        if (!state.opts.changes) {
+          throw new Error(
+            `babel-plugin-extend-docs: You need to provide a changes array (string)\nExample: changes: [...]`,
+          );
+        }
+
         state.importedStorage = [];
         state.filePath = '';
       },

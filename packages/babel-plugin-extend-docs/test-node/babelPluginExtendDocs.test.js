@@ -1,3 +1,6 @@
+const { expect } = require('chai');
+const babel = require('babel-core');
+const path = require('path');
 const pluginTester = require('babel-plugin-tester').default;
 const babelPluginExtendDocs = require('../src/babelPluginExtendDocs.js');
 
@@ -45,12 +48,54 @@ const baseConfig = {
   ],
 };
 
+function tryPluginOptions(options) {
+  babel.transform('', {
+    plugins: [[babelPluginExtendDocs, options]],
+  });
+}
+
+describe('babel-plugin-extend-docs', () => {
+  it('throws if no rootPath string is provided', () => {
+    expect(() => tryPluginOptions({ ...baseConfig })).to.throw(
+      `babel-plugin-extend-docs: You need to provide a rootPath option (string)\nExample: rootPath: path.resolve('.')`,
+    );
+  });
+
+  it('throws if rootPath does not exist', () => {
+    expect(() => tryPluginOptions({ ...baseConfig, rootPath: 'something' })).to.throw(
+      `babel-plugin-extend-docs: The provided rootPath "something" does not exist.`,
+    );
+  });
+
+  it('throws if rootPath is not a directory', () => {
+    const rootPath = path.resolve('./index.js');
+    expect(() => {
+      tryPluginOptions({
+        ...baseConfig,
+        rootPath,
+      });
+    }).to.throw(
+      `babel-plugin-extend-docs: The provided rootPath "${rootPath}" is not a directory.`,
+    );
+  });
+
+  it('throws if no changes array is provided', () => {
+    expect(() => {
+      tryPluginOptions({
+        rootPath: path.resolve('./'),
+      });
+    }).to.throw(
+      'babel-plugin-extend-docs: You need to provide a changes array (string)\nExample: changes: [...]',
+    );
+  });
+});
+
 pluginTester({
   plugin: babelPluginExtendDocs,
-  pluginName: 'ExtendDocs',
+  pluginName: 'babel-plugin-extend-docs',
   pluginOptions: {
     ...baseConfig,
-    filePath: '/node_module/@lion/input/README.md',
+    __filePath: '/node_module/@lion/input/README.md',
   },
   snapshot: false,
   tests: {
@@ -63,7 +108,7 @@ pluginTester({
       output: `import { WolfInput } from '../../../../index.js';`,
       pluginOptions: {
         ...baseConfig,
-        filePath: '/node_module/@lion/input/docs/README.md',
+        __filePath: '/node_module/@lion/input/docs/README.md',
       },
     },
     'replaces local src class imports (3)': {
@@ -109,7 +154,7 @@ pluginTester({
             },
           },
         ],
-        filePath: '/node_module/@lion/input/README.md',
+        __filePath: '/node_module/@lion/input/README.md',
       },
     },
     'replaces local src class imports (6)': {
@@ -131,7 +176,7 @@ pluginTester({
       output: `import { WolfInput } from '../../../../index.js';`,
       pluginOptions: {
         ...baseConfig,
-        filePath: '/node_module/@lion/input/docs/README.md',
+        __filePath: '/node_module/@lion/input/docs/README.md',
       },
     },
     'replaces `@lion` class imports': {
