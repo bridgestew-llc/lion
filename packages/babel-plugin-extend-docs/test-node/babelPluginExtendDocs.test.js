@@ -48,21 +48,21 @@ const baseConfig = {
   ],
 };
 
-function tryPluginOptions(options) {
-  babel.transform('', {
+function executeBabel(input, options) {
+  babel.transform(input, {
     plugins: [[babelPluginExtendDocs, options]],
   });
 }
 
 describe('babel-plugin-extend-docs', () => {
   it('throws if no rootPath string is provided', () => {
-    expect(() => tryPluginOptions({ ...baseConfig })).to.throw(
+    expect(() => executeBabel('', { ...baseConfig })).to.throw(
       `babel-plugin-extend-docs: You need to provide a rootPath option (string)\nExample: rootPath: path.resolve('.')`,
     );
   });
 
   it('throws if rootPath does not exist', () => {
-    expect(() => tryPluginOptions({ ...baseConfig, rootPath: 'something' })).to.throw(
+    expect(() => executeBabel('', { ...baseConfig, rootPath: 'something' })).to.throw(
       `babel-plugin-extend-docs: The provided rootPath "something" does not exist.`,
     );
   });
@@ -70,7 +70,7 @@ describe('babel-plugin-extend-docs', () => {
   it('throws if rootPath is not a directory', () => {
     const rootPath = path.resolve('./index.js');
     expect(() => {
-      tryPluginOptions({
+      executeBabel('', {
         ...baseConfig,
         rootPath,
       });
@@ -81,7 +81,7 @@ describe('babel-plugin-extend-docs', () => {
 
   it('throws if no changes array is provided', () => {
     expect(() => {
-      tryPluginOptions({
+      executeBabel('', {
         rootPath: path.resolve('./'),
       });
     }).to.throw(
