@@ -151,16 +151,39 @@ pluginTester({
       code: `import '@lion/input/lion-input.js';`,
       output: `import '../../../__element-definitions/wolf-input.js';`,
     },
+    "doesn't care about namespace imports": {
+      code: `import * as all from '@lion/input';`,
+      output: `import * as all from '@lion/input';`,
+    },
 
     'replaces tags in function occurrences': {
       code: `
         export const main = () => html\`
-          <lion-input label="First Name"></lion-input>
+          <lion-input \${'hi'} label="First Name"></lion-input>
         \`;
       `,
       /* Babel for some reason removes the new line here */
       output: `
-        export const main = () => html\` <wolf-input label="First Name"></wolf-input> \`;
+        export const main = () => html\` <wolf-input \${'hi'} label="First Name"></wolf-input> \`;
+      `,
+    },
+    'replaces nested tags in function occurrences': {
+      code: `
+        export const main = () => html\`
+          <lion-input label="First Name">
+            \${html\`
+              <lion-button></lion-button>
+            \`}
+          </lion-input>
+        \`;
+      `,
+      // sometimes babel removes the newline to a space..
+      output: `
+        export const main = () => html\`
+          <wolf-input label="First Name">
+            \${html\` <wolf-button></wolf-button> \`}
+          </wolf-input>
+        \`;
       `,
     },
 
@@ -190,10 +213,5 @@ pluginTester({
         }
       `,
     },
-    "doesn't care about namespace imports": {
-      code: `import * as all from '@lion/input';`,
-      output: `import * as all from '@lion/input';`,
-    },
   },
 });
-// TODO: Test more edge cases
