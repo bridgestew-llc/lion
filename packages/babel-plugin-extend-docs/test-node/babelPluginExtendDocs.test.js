@@ -12,16 +12,16 @@ const baseConfig = {
         to: 'WolfInput',
         paths: [
           {
-            from: 'index.js',
-            to: 'index.js',
+            from: './index.js',
+            to: './index.js',
           },
           {
-            from: 'src/LionInput.js',
-            to: 'index.js',
+            from: './src/LionInput.js',
+            to: './index.js',
           },
           {
             from: '@lion/input',
-            to: 'index.js',
+            to: './index.js',
           },
         ],
         fromPaths: ['index.js', 'src/LionInput.js', '@lion/input'],
@@ -32,16 +32,14 @@ const baseConfig = {
         to: 'wolf-input',
         paths: [
           {
-            from: 'lion-input.js',
-            to: '__element-definitions/wolf-input.js',
+            from: './lion-input.js',
+            to: './__element-definitions/wolf-input.js',
           },
           {
             from: '@lion/input/lion-input.js',
-            to: '__element-definitions/wolf-input.js',
+            to: './__element-definitions/wolf-input.js',
           },
         ],
-        fromPaths: ['lion-input.js', '@lion/input/lion-input.js'],
-        toPath: '__element-definitions/wolf-input.js',
       },
     },
     {
@@ -51,16 +49,16 @@ const baseConfig = {
         to: 'WolfButton',
         paths: [
           {
-            from: 'index.js',
-            to: 'index.js',
+            from: './index.js',
+            to: './index.js',
           },
           {
-            from: 'src/LionButton.js',
-            to: 'index.js',
+            from: './src/LionButton.js',
+            to: './index.js',
           },
           {
             from: '@lion/button',
-            to: 'index.js',
+            to: './index.js',
           },
         ],
         fromPaths: ['index.js', 'src/LionButton.js', '@lion/button'],
@@ -69,16 +67,14 @@ const baseConfig = {
       tag: {
         from: 'lion-button',
         to: 'wolf-button',
-        fromPaths: ['lion-button.js', '@lion/button/lion-button.js'],
-        toPath: '__element-definitions/wolf-button.js',
         paths: [
           {
-            from: 'lion-button.js',
-            to: '__element-definitions/wolf-button.js',
+            from: './lion-button.js',
+            to: './__element-definitions/wolf-button.js',
           },
           {
             from: '@lion/button/lion-button.js',
-            to: '__element-definitions/wolf-button.js',
+            to: './__element-definitions/wolf-button.js',
           },
         ],
       },
@@ -90,16 +86,16 @@ const baseConfig = {
         to: 'localize',
         paths: [
           {
-            from: 'index.js',
-            to: 'index.js',
+            from: './index.js',
+            to: './index.js',
           },
           {
-            from: 'src/localize.js',
-            to: 'index.js',
+            from: './src/localize.js',
+            to: './index.js',
           },
           {
             from: '@lion/localize',
-            to: 'index.js',
+            to: './index.js',
           },
         ],
         fromPaths: ['index.js', 'src/localize.js', '@lion/localize'],

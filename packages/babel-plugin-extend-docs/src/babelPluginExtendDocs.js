@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 const fs = require('fs');
+const pathModule = require('path');
 
 // -1 because filepath is an absolute path starting with '/' and we turn it into a relative path without a '/' at the start
 const getFolderDepth = filePath => [...filePath.match(new RegExp('/', 'g'))].length - 1;
@@ -45,17 +46,17 @@ const detectImported = ({ path, state, opts, types: t }) => {
 };
 
 const replaceTagImports = ({ path, state, opts, types: t }) => {
-  opts.changes.forEach(change => {
-    const foundFromPath =
-      change.tag &&
-      change.tag.fromPaths.find(fromPath => path.node.source.value.match(new RegExp(fromPath))); // TODO: don't just match, be more strict here, it should be for the most part the exact `same` path
-
-    if (foundFromPath) {
-      path.node.source = t.stringLiteral(
-        `${'../'.repeat(getFolderDepth(state.filePath))}${change.tag.toPath}`,
-      );
+  for (const change of opts.changes) {
+    if (change.tag && Array.isArray(change.tag.paths) && change.tag.paths.length > 0) {
+      for (const { from, to } of change.tag.paths) {
+        if (from === path.node.source.value) {
+          const relativePart = '../'.repeat(getFolderDepth(state.filePath));
+          const updatedPath = pathModule.join(relativePart, to);
+          path.node.source = t.stringLiteral(updatedPath);
+        }
+      }
     }
-  });
+  }
 };
 
 const replaceTemplateElements = ({ path, opts }) => {
