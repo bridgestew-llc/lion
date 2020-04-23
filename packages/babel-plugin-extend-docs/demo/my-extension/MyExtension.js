@@ -14,6 +14,8 @@ export class MyExtension extends MyCounter {
   }
 
   _renderHeader() {
-    return html` <h2>I am MyExtension</h2> `;
+    return html`
+      <h2>I am MyExtension</h2>
+    `;
   }
 }

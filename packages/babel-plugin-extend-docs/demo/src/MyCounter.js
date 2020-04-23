@@ -51,11 +51,15 @@ export class MyCounter extends LitElement {
   }
 
   _renderHeader() {
-    return html` <h3>I am MyCounter</h3> `;
+    return html`
+      <h3>I am MyCounter</h3>
+    `;
   }
 
   _renderIncButton() {
-    return html` <button @click="${this.inc}">+</button> `;
+    return html`
+      <button @click="${this.inc}">+</button>
+    `;
   }
 
   render() {
