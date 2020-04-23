@@ -30,8 +30,5 @@
     "src",
     "test-node",
     "*.js"
-  ],
-  "devDependencies": {
-    "babel-plugin-tester": "^9.0.1"
-  }
+  ]
 }
