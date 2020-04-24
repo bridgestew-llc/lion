@@ -180,6 +180,19 @@ describe('babel-plugin-extend-docs', () => {
     expect(executeBabel(code, testConfig)).to.equal(output);
   });
 
+  it('renames classes everywhere', () => {
+    const code = [
+      `import { LionInput } from './src/LionInput.js';`,
+      `class Foo extends LionInput {}`,
+    ].join('\n');
+    const output = [
+      `import { WolfInput } from "../../../index.js";`,
+      '',
+      `class Foo extends WolfInput {}`,
+    ].join('\n');
+    expect(executeBabel(code, testConfig)).to.equal(output);
+  });
+
   it('replaces local src class imports (2)', () => {
     const code = `import { LionInput } from './src/LionInput.js';`;
     const output = `import { WolfInput } from "../../../../index.js";`;
@@ -197,10 +210,10 @@ describe('babel-plugin-extend-docs', () => {
   });
 
   it('replaces local src class imports (4)', () => {
-    const code = `
-      import someDefaultHelper, { LionInput, someHelper } from './src/LionInput.js';
-      import { LionButton } from '@lion/button';
-    `;
+    const code = [
+      `import someDefaultHelper, { LionInput, someHelper } from './src/LionInput.js';`,
+      `import { LionButton } from '@lion/button';`,
+    ].join('\n');
     const output = [
       `import someDefaultHelper, { someHelper } from "./src/LionInput.js";`,
       `import { WolfInput, WolfButton } from "../../../index.js";`,

@@ -25,9 +25,10 @@ function joinPaths(a, b) {
   return updatedPath;
 }
 
-function detectImported({ path, state, opts, types: t }) {
+function renameAndStoreImports({ path, state, opts, types: t }) {
   for (const specifier of path.node.specifiers) {
     let managed = false;
+
     if (t.isIdentifier(specifier.imported) && specifier.type === 'ImportSpecifier') {
       for (const change of opts.changes) {
         if (specifier.imported.name === change.variable.from) {
@@ -36,14 +37,15 @@ function detectImported({ path, state, opts, types: t }) {
               const relativePart = '../'.repeat(getFolderDepth(state.filePath));
               const importAs = getImportAs(specifier, change.variable.to);
               const newPath = joinPaths(relativePart, to);
-              const newSpecifier = t.importSpecifier(
-                t.identifier(importAs),
-                t.identifier(change.variable.to),
-              );
 
+              // rename so it replaces all occurrences
+              path.scope.rename(specifier.local.name, importAs);
+              if (specifier.imported && specifier.imported.name) {
+                specifier.imported.name = change.variable.to;
+              }
               state.importedStorage.push({
                 action: 'change',
-                specifier: newSpecifier,
+                specifier,
                 path: newPath,
               });
               managed = true;
@@ -151,7 +153,7 @@ module.exports = ({ types: t }) => ({
         : state.file.opts.filename.replace(state.opts.rootPath, '');
 
       if (path.node.specifiers.length > 0) {
-        detectImported({ path, state, opts: state.opts, types: t });
+        renameAndStoreImports({ path, state, opts: state.opts, types: t });
       } else {
         replaceTagImports({ path, state, opts: state.opts, types: t });
       }
