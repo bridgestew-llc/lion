@@ -24,8 +24,6 @@ const baseConfig = {
             to: './index.js',
           },
         ],
-        fromPaths: ['index.js', 'src/LionInput.js', '@lion/input'],
-        toPath: 'index.js',
       },
       tag: {
         from: 'lion-input',
@@ -61,8 +59,6 @@ const baseConfig = {
             to: './index.js',
           },
         ],
-        fromPaths: ['index.js', 'src/LionButton.js', '@lion/button'],
-        toPath: 'index.js',
       },
       tag: {
         from: 'lion-button',
@@ -87,19 +83,17 @@ const baseConfig = {
         paths: [
           {
             from: './index.js',
-            to: './index.js',
+            to: './localize.js',
           },
           {
             from: './src/localize.js',
-            to: './index.js',
+            to: './localize.js',
           },
           {
             from: '@lion/localize',
-            to: './index.js',
+            to: './localize.js',
           },
         ],
-        fromPaths: ['index.js', 'src/localize.js', '@lion/localize'],
-        toPath: 'localize.js',
       },
     },
   ],
@@ -190,8 +184,8 @@ describe('babel-plugin-extend-docs', () => {
       import { LionButton } from '@lion/button';
     `;
     const output = [
+      `import someDefaultHelper, { someHelper } from "./src/LionInput.js";`,
       `import { WolfInput, WolfButton } from "../../../index.js";`,
-      `import someDefaultHelper, { someHelper } from './src/LionInput.js';`,
     ].join('\n');
     expect(executeBabel(code, testConfig)).to.equal(output);
   });
@@ -201,7 +195,7 @@ describe('babel-plugin-extend-docs', () => {
     const output = [
       `import { WolfInput, WolfFoo } from "../../../index.js";`,
       `import { WolfBar } from "../../../somewhere-else.js";`,
-      `import { someHelper } from '@lion/input';`,
+      `import { someHelper } from "@lion/input";`,
     ].join('\n');
     const config = {
       ...testConfig,
@@ -212,8 +206,12 @@ describe('babel-plugin-extend-docs', () => {
           variable: {
             from: 'LionFoo',
             to: 'WolfFoo',
-            fromPaths: ['@lion/input'],
-            toPath: 'index.js',
+            paths: [
+              {
+                from: '@lion/input',
+                to: './index.js',
+              },
+            ],
           },
         },
         {
@@ -221,8 +219,12 @@ describe('babel-plugin-extend-docs', () => {
           variable: {
             from: 'LionBar',
             to: 'WolfBar',
-            fromPaths: ['@lion/input'],
-            toPath: 'somewhere-else.js',
+            paths: [
+              {
+                from: '@lion/input',
+                to: './somewhere-else.js',
+              },
+            ],
           },
         },
       ],
@@ -265,9 +267,9 @@ describe('babel-plugin-extend-docs', () => {
     expect(executeBabel(code, testConfig)).to.equal(output);
   });
 
-  it('does NOT replace imports that do not start with Lion', () => {
+  it('does NOT replace imports no in the config', () => {
     const code = `import { FooInput } from '@lion/input';`;
-    const output = `import { FooInput } from '@lion/input';`;
+    const output = `import { FooInput } from "@lion/input";`;
     expect(executeBabel(code, testConfig)).to.equal(output);
   });
 
@@ -285,7 +287,7 @@ describe('babel-plugin-extend-docs', () => {
 
   it("doesn't care about namespace imports", () => {
     const code = `import * as all from '@lion/input';`;
-    const output = `import * as all from '@lion/input';`;
+    const output = `import * as all from "@lion/input";`;
     expect(executeBabel(code, testConfig)).to.equal(output);
   });
 

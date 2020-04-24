@@ -5,44 +5,70 @@ const pathModule = require('path');
 // -1 because filepath is an absolute path starting with '/' and we turn it into a relative path without a '/' at the start
 const getFolderDepth = filePath => [...filePath.match(new RegExp('/', 'g'))].length - 1;
 
+function getImportAs(specifier, newImportName) {
+  if (specifier.local && specifier.local.name && specifier.local.name !== specifier.imported.name) {
+    return specifier.local.name;
+  }
+  return newImportName;
+}
+
 /**
  * Example: import someDefaultHelper, { LionInput, someHelper } from './src/LionInput.js';
  * We should filter out the imports that we need to replace and store for now (LionInput).
  * Then in the exit step, we can create the necessary new imports and insert them
  */
 const detectImported = ({ path, state, opts, types: t }) => {
-  path.node.specifiers = path.node.specifiers.filter(specifier => {
+  for (const specifier of path.node.specifiers) {
+    let managed = false;
     if (t.isIdentifier(specifier.imported) && specifier.type === 'ImportSpecifier') {
-      const changeObj = opts.changes.find(change => change.name === specifier.imported.name);
-      // TODO: Do we need to add a check here to see if path.node.source.value matches one of the changeObj.variable.fromPaths? Do we care?
+      for (const change of opts.changes) {
+        if (specifier.imported.name === change.variable.from) {
+          for (const { from, to } of change.variable.paths) {
+            if (from === path.node.source.value) {
+              const relativePart = '../'.repeat(getFolderDepth(state.filePath));
+              const importAs = getImportAs(specifier, change.variable.to);
 
-      // keep undefined in case we dont have a special local that is different from imported
-      let importAs;
-
-      if (
-        specifier.local &&
-        specifier.local.name &&
-        specifier.local.name !== specifier.imported.name
-      ) {
-        importAs = specifier.local.name;
-      }
-
-      if (changeObj) {
-        state.importedStorage.push({
-          importName: specifier.imported.name,
-          importAs,
-          changeObj,
-        });
-        return false;
+              state.importedStorage.push({
+                action: 'change',
+                specifier: t.importSpecifier(
+                  t.identifier(importAs),
+                  t.identifier(change.variable.to),
+                ),
+                path: pathModule.join(relativePart, to),
+              });
+              managed = true;
+            }
+          }
+        }
       }
     }
-    return true;
-  });
 
-  // e.g. `import '@lion-button';`  --> nothing is imported, so remove the import declaration entirely.
-  if (path.node.specifiers.length === 0) {
-    path.remove();
+    if (managed === false) {
+      state.importedStorage.push({
+        action: 'keep',
+        specifier,
+        path: path.node.source.value,
+      });
+    }
   }
+  path.remove();
+};
+
+const generateImportStatements = ({ state, types: t }) => {
+  const statements = {};
+  for (const imp of state.importedStorage) {
+    if (!statements[imp.path]) {
+      statements[imp.path] = [];
+    }
+    statements[imp.path].push(imp.specifier);
+  }
+  const res = [];
+  for (const path of Object.keys(statements)) {
+    const importSpecifiers = statements[path];
+    const source = t.stringLiteral(path);
+    res.push(t.importDeclaration(importSpecifiers, source));
+  }
+  return res;
 };
 
 const replaceTagImports = ({ path, state, opts, types: t }) => {
@@ -70,27 +96,6 @@ const replaceTemplateElements = ({ path, opts }) => {
         }
       }
     });
-  });
-};
-
-const generateImportStatements = ({ state, types: t }) => {
-  const newImportsMap = new Map();
-  state.importedStorage.forEach(imp => {
-    newImportsMap.set(imp.changeObj.variable.toPath, [
-      ...(newImportsMap.get(imp.changeObj.variable.toPath) || []),
-      {
-        importName: imp.changeObj.variable.to,
-        importAs: imp.importAs || imp.changeObj.variable.to,
-      },
-    ]);
-  });
-
-  return Array.from(newImportsMap).map(value => {
-    const source = t.stringLiteral(`${'../'.repeat(getFolderDepth(state.filePath))}${value[0]}`);
-    const importSpecifiers = value[1].map(subValue =>
-      t.importSpecifier(t.identifier(subValue.importAs), t.identifier(subValue.importName)),
-    );
-    return t.importDeclaration(importSpecifiers, source);
   });
 };
 
