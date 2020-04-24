@@ -146,10 +146,11 @@ describe('babel-plugin-extend-docs', () => {
     );
   });
 
-  it('throws if no changes array is provided', () => {
+  it.skip('throws if tag does not have a valid to, from, and paths property', () => {
     expect(() => {
       executeBabel('', {
         rootPath: path.resolve('./'),
+        changes: [{ tag: {} }],
       });
     }).to.throw(
       'babel-plugin-extend-docs: You need to provide a changes array (string)\nExample: changes: [...]',

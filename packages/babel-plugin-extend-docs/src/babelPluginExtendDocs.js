@@ -2,8 +2,13 @@
 const fs = require('fs');
 const pathModule = require('path');
 
-// -1 because filepath is an absolute path starting with '/' and we turn it into a relative path without a '/' at the start
-const getFolderDepth = filePath => [...filePath.match(new RegExp('/', 'g'))].length - 1;
+/**
+ * -1 because filepath is an absolute path starting with '/' and we turn it into a relative path without a '/' at the start
+ * @param {*} filePath
+ */
+function getFolderDepth(filePath) {
+  return [...filePath.match(new RegExp('/', 'g'))].length - 1;
+}
 
 function getImportAs(specifier, newImportName) {
   if (specifier.local && specifier.local.name && specifier.local.name !== specifier.imported.name) {
@@ -20,12 +25,7 @@ function joinPaths(a, b) {
   return updatedPath;
 }
 
-/**
- * Example: import someDefaultHelper, { LionInput, someHelper } from './src/LionInput.js';
- * We should filter out the imports that we need to replace and store for now (LionInput).
- * Then in the exit step, we can create the necessary new imports and insert them
- */
-const detectImported = ({ path, state, opts, types: t }) => {
+function detectImported({ path, state, opts, types: t }) {
   for (const specifier of path.node.specifiers) {
     let managed = false;
     if (t.isIdentifier(specifier.imported) && specifier.type === 'ImportSpecifier') {
@@ -62,9 +62,9 @@ const detectImported = ({ path, state, opts, types: t }) => {
     }
   }
   path.remove();
-};
+}
 
-const generateImportStatements = ({ state, types: t }) => {
+function generateImportStatements({ state, types: t }) {
   const statements = {};
   for (const imp of state.importedStorage) {
     if (!statements[imp.path]) {
@@ -79,9 +79,9 @@ const generateImportStatements = ({ state, types: t }) => {
     res.push(t.importDeclaration(importSpecifiers, source));
   }
   return res;
-};
+}
 
-const replaceTagImports = ({ path, state, opts, types: t }) => {
+function replaceTagImports({ path, state, opts, types: t }) {
   for (const change of opts.changes) {
     if (change.tag && Array.isArray(change.tag.paths) && change.tag.paths.length > 0) {
       for (const { from, to } of change.tag.paths) {
@@ -93,9 +93,9 @@ const replaceTagImports = ({ path, state, opts, types: t }) => {
       }
     }
   }
-};
+}
 
-const replaceTemplateElements = ({ path, opts }) => {
+function replaceTemplateElements({ path, opts }) {
   const replaceTag = (value, from, to) => value.replace(new RegExp(from, 'g'), to);
   path.node.quasi.quasis.forEach(quasi => {
     opts.changes.forEach(change => {
@@ -107,11 +107,11 @@ const replaceTemplateElements = ({ path, opts }) => {
       }
     });
   });
-};
+}
 
-const insertImportStatements = ({ imports, path }) => {
+function insertImportStatements({ imports, path }) {
   path.node.body = [...imports, ...path.node.body];
-};
+}
 
 module.exports = ({ types: t }) => ({
   visitor: {
