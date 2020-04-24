@@ -1,101 +1,10 @@
 /* eslint-disable no-param-reassign */
-const fs = require('fs');
-const pathModule = require('path');
-
-/**
- * -1 because filepath is an absolute path starting with '/' and we turn it into a relative path without a '/' at the start
- * @param {*} filePath
- */
-function getFolderDepth(filePath) {
-  return [...filePath.match(new RegExp('/', 'g'))].length - 1;
-}
-
-function getImportAs(specifier, newImportName) {
-  if (specifier.local && specifier.local.name && specifier.local.name !== specifier.imported.name) {
-    return specifier.local.name;
-  }
-  return newImportName;
-}
-
-function joinPaths(a, b) {
-  const updatedPath = pathModule.join(a, b);
-  if (a === '' && b.startsWith('./')) {
-    return `./${updatedPath}`;
-  }
-  return updatedPath;
-}
-
-function renameAndStoreImports({ path, state, opts, types: t }) {
-  for (const specifier of path.node.specifiers) {
-    let managed = false;
-
-    if (t.isIdentifier(specifier.imported) && specifier.type === 'ImportSpecifier') {
-      for (const change of opts.changes) {
-        if (specifier.imported.name === change.variable.from) {
-          for (const { from, to } of change.variable.paths) {
-            if (managed === false && from === path.node.source.value) {
-              const relativePart = '../'.repeat(getFolderDepth(state.filePath));
-              const importAs = getImportAs(specifier, change.variable.to);
-              const newPath = joinPaths(relativePart, to);
-
-              // rename so it replaces all occurrences
-              path.scope.rename(specifier.local.name, importAs);
-              if (specifier.imported && specifier.imported.name) {
-                specifier.imported.name = change.variable.to;
-              }
-              state.importedStorage.push({
-                action: 'change',
-                specifier,
-                path: newPath,
-              });
-              managed = true;
-            }
-          }
-        }
-      }
-    }
-
-    if (managed === false) {
-      state.importedStorage.push({
-        action: 'keep',
-        specifier,
-        path: path.node.source.value,
-      });
-    }
-  }
-  path.remove();
-}
-
-function generateImportStatements({ state, types: t }) {
-  const statements = {};
-  for (const imp of state.importedStorage) {
-    if (!statements[imp.path]) {
-      statements[imp.path] = [];
-    }
-    statements[imp.path].push(imp.specifier);
-  }
-  const res = [];
-  for (const path of Object.keys(statements)) {
-    const importSpecifiers = statements[path];
-    const source = t.stringLiteral(path);
-    res.push(t.importDeclaration(importSpecifiers, source));
-  }
-  return res;
-}
-
-function replaceTagImports({ path, state, opts, types: t }) {
-  for (const change of opts.changes) {
-    if (change.tag && Array.isArray(change.tag.paths) && change.tag.paths.length > 0) {
-      for (const { from, to } of change.tag.paths) {
-        if (from === path.node.source.value) {
-          const relativePart = '../'.repeat(getFolderDepth(state.filePath));
-          const updatedPath = joinPaths(relativePart, to);
-          path.node.source = t.stringLiteral(updatedPath);
-        }
-      }
-    }
-  }
-}
+const {
+  renameAndStoreImports,
+  generateImportStatements,
+  replaceTagImports,
+} = require('./handleImports.js');
+const { validateOptions } = require('./validateOptions.js');
 
 function replaceTemplateElements({ path, opts }) {
   const replaceTag = (value, from, to) => value.replace(new RegExp(from, 'g'), to);
@@ -113,34 +22,6 @@ function replaceTemplateElements({ path, opts }) {
 
 function insertImportStatements({ imports, path }) {
   path.node.body = [...imports, ...path.node.body];
-}
-
-function validateChanges(changes) {
-  for (const change of changes) {
-    if (change.tag) {
-      const tagExample = [
-        'Should be example:',
-        '  {',
-        "    from: 'my-counter',",
-        "    to: 'my-extension',",
-        "    paths: [{ from: './my-counter.js', to: './my-extension/my-extension.js' }],",
-        '  }',
-      ];
-
-      const { tag } = change;
-      const errorMsg = [
-        'babel-plugin-extend-docs: The provided tag change is not valid.',
-        `Given: ${JSON.stringify(tag)}`,
-        ...tagExample,
-      ].join('\n');
-      if (typeof tag.from !== 'string' || !tag.from) {
-        throw new Error(errorMsg);
-      }
-      if (typeof tag.to !== 'string' || !tag.to) {
-        throw new Error(errorMsg);
-      }
-    }
-  }
 }
 
 module.exports = ({ types: t }) => ({
@@ -165,30 +46,7 @@ module.exports = ({ types: t }) => ({
     },
     Program: {
       enter: (path, state) => {
-        // if __filePath is provided directly then we assume you are a test or you know what you are doing
-        if (!state.opts.__filePath) {
-          if (!state.opts.rootPath) {
-            throw new Error(
-              `babel-plugin-extend-docs: You need to provide a rootPath option (string)\nExample: rootPath: path.resolve('.')`,
-            );
-          }
-          if (!fs.existsSync(state.opts.rootPath)) {
-            throw new Error(
-              `babel-plugin-extend-docs: The provided rootPath "${state.opts.rootPath}" does not exist.`,
-            );
-          }
-          if (!fs.lstatSync(state.opts.rootPath).isDirectory()) {
-            throw new Error(
-              `babel-plugin-extend-docs: The provided rootPath "${state.opts.rootPath}" is not a directory.`,
-            );
-          }
-        }
-        if (!state.opts.changes) {
-          throw new Error(
-            `babel-plugin-extend-docs: You need to provide a changes array (string)\nExample: changes: [...]`,
-          );
-        }
-        validateChanges(state.opts.changes);
+        validateOptions(state.opts);
 
         state.importedStorage = [];
         state.filePath = '';
