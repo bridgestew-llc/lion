@@ -12,6 +12,14 @@ function getImportAs(specifier, newImportName) {
   return newImportName;
 }
 
+function joinPaths(a, b) {
+  const updatedPath = pathModule.join(a, b);
+  if (a === '' && b.startsWith('./')) {
+    return `./${updatedPath}`;
+  }
+  return updatedPath;
+}
+
 /**
  * Example: import someDefaultHelper, { LionInput, someHelper } from './src/LionInput.js';
  * We should filter out the imports that we need to replace and store for now (LionInput).
@@ -24,17 +32,19 @@ const detectImported = ({ path, state, opts, types: t }) => {
       for (const change of opts.changes) {
         if (specifier.imported.name === change.variable.from) {
           for (const { from, to } of change.variable.paths) {
-            if (from === path.node.source.value) {
+            if (managed === false && from === path.node.source.value) {
               const relativePart = '../'.repeat(getFolderDepth(state.filePath));
               const importAs = getImportAs(specifier, change.variable.to);
+              const newPath = joinPaths(relativePart, to);
+              const newSpecifier = t.importSpecifier(
+                t.identifier(importAs),
+                t.identifier(change.variable.to),
+              );
 
               state.importedStorage.push({
                 action: 'change',
-                specifier: t.importSpecifier(
-                  t.identifier(importAs),
-                  t.identifier(change.variable.to),
-                ),
-                path: pathModule.join(relativePart, to),
+                specifier: newSpecifier,
+                path: newPath,
               });
               managed = true;
             }
@@ -77,7 +87,7 @@ const replaceTagImports = ({ path, state, opts, types: t }) => {
       for (const { from, to } of change.tag.paths) {
         if (from === path.node.source.value) {
           const relativePart = '../'.repeat(getFolderDepth(state.filePath));
-          const updatedPath = pathModule.join(relativePart, to);
+          const updatedPath = joinPaths(relativePart, to);
           path.node.source = t.stringLiteral(updatedPath);
         }
       }

@@ -7,14 +7,15 @@ const extendDocsConfig = {
       variable: {
         from: 'MyCounter',
         to: 'MyExtension',
-        fromPaths: ['index.js', 'src/MyCounter.js'],
-        toPath: './my-extension/index.js',
+        paths: [
+          { from: './index.js', to: './my-extension/index.js' },
+          { from: './src/MyCounter.js', to: './my-extension/index.js' },
+        ],
       },
       tag: {
         from: 'my-counter',
         to: 'my-extension',
-        fromPaths: ['my-counter.js'],
-        toPath: './my-extension/my-extension.js',
+        paths: [{ from: './my-counter.js', to: './my-extension/my-extension.js' }],
       },
     },
   ],

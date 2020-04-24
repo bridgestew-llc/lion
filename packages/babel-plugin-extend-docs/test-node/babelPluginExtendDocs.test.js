@@ -245,6 +245,38 @@ describe('babel-plugin-extend-docs', () => {
     expect(executeBabel(code, testConfig)).to.equal(output);
   });
 
+  it('allows separate import paths of managed imports', () => {
+    const code1 = `import { LionInput } from '@lion/input';`;
+    const code2 = `import { LionInput } from './src/LionInput.js';`;
+    const output1 = `import { WolfInput } from "../../../fork/LionInput.js";`;
+    const output2 = `import { WolfInput } from "../../../index.js";`;
+    const config = {
+      ...testConfig,
+      changes: [
+        {
+          name: 'LionInput',
+          variable: {
+            from: 'LionInput',
+            to: 'WolfInput',
+            paths: [
+              {
+                from: '@lion/input',
+                to: './fork/LionInput.js',
+              },
+              {
+                from: './src/LionInput.js',
+                to: './index.js',
+              },
+            ],
+          },
+        },
+      ],
+      __filePath: '/node_module/@lion/input/README.md',
+    };
+    expect(executeBabel(code1, config)).to.equal(output1);
+    expect(executeBabel(code2, config)).to.equal(output2);
+  });
+
   it('replaces local index.js class imports (1)', () => {
     const code = `import { LionInput } from './index.js';`;
     const output = `import { WolfInput } from "../../../index.js";`;
@@ -257,6 +289,16 @@ describe('babel-plugin-extend-docs', () => {
     const config = {
       ...testConfig,
       __filePath: '/node_module/@lion/input/docs/README.md',
+    };
+    expect(executeBabel(code, config)).to.equal(output);
+  });
+
+  it('works with local index.js class imports with an empty relative path', () => {
+    const code = `import { LionInput } from './index.js';`;
+    const output = `import { WolfInput } from "./index.js";`;
+    const config = {
+      ...testConfig,
+      __filePath: './README.md',
     };
     expect(executeBabel(code, config)).to.equal(output);
   });
