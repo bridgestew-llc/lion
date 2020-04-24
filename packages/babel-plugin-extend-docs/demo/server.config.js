@@ -30,7 +30,7 @@ module.exports = {
   babelConfig: {
     overrides: [
       {
-        test: './demo/my-app.js',
+        test: ['./demo/**/*.demo.js'],
         plugins: [[path.resolve('./'), extendDocsConfig]],
       },
     ],

@@ -6,7 +6,7 @@ const babelPluginExtendDocs = require('../src/babelPluginExtendDocs.js');
 const baseConfig = {
   changes: [
     {
-      name: 'LionInput',
+      description: 'LionInput',
       variable: {
         from: 'LionInput',
         to: 'WolfInput',
@@ -41,7 +41,7 @@ const baseConfig = {
       },
     },
     {
-      name: 'LionButton',
+      description: 'LionButton',
       variable: {
         from: 'LionButton',
         to: 'WolfButton',
@@ -76,7 +76,7 @@ const baseConfig = {
       },
     },
     {
-      name: 'localize',
+      description: 'localize',
       variable: {
         from: 'localize',
         to: 'localize',
@@ -202,7 +202,7 @@ describe('babel-plugin-extend-docs', () => {
       changes: [
         ...baseConfig.changes,
         {
-          name: 'LionFoo',
+          description: 'LionFoo',
           variable: {
             from: 'LionFoo',
             to: 'WolfFoo',
@@ -215,7 +215,7 @@ describe('babel-plugin-extend-docs', () => {
           },
         },
         {
-          name: 'LionBar',
+          description: 'LionBar',
           variable: {
             from: 'LionBar',
             to: 'WolfBar',
@@ -254,7 +254,7 @@ describe('babel-plugin-extend-docs', () => {
       ...testConfig,
       changes: [
         {
-          name: 'LionInput',
+          description: 'LionInput',
           variable: {
             from: 'LionInput',
             to: 'WolfInput',
