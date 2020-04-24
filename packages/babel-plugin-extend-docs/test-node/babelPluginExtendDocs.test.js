@@ -146,15 +146,32 @@ describe('babel-plugin-extend-docs', () => {
     );
   });
 
-  it.skip('throws if tag does not have a valid to, from, and paths property', () => {
-    expect(() => {
-      executeBabel('', {
-        rootPath: path.resolve('./'),
-        changes: [{ tag: {} }],
-      });
-    }).to.throw(
-      'babel-plugin-extend-docs: You need to provide a changes array (string)\nExample: changes: [...]',
-    );
+  it('throws if tag does not have a valid to, from, and paths property', () => {
+    function tagThrowsErrorFor(tag) {
+      expect(() => {
+        executeBabel('', {
+          rootPath: path.resolve('./'),
+          changes: [{ tag }],
+        });
+      }).to.throw(
+        [
+          'babel-plugin-extend-docs: The provided tag change is not valid.',
+          `Given: ${JSON.stringify(tag)}`,
+          'Should be example:',
+          '  {',
+          "    from: 'my-counter',",
+          "    to: 'my-extension',",
+          "    paths: [{ from: './my-counter.js', to: './my-extension/my-extension.js' }],",
+          '  }',
+        ].join('\n'),
+      );
+    }
+
+    tagThrowsErrorFor({});
+    tagThrowsErrorFor({ from: '' });
+    tagThrowsErrorFor({ from: 'my-counter' });
+    tagThrowsErrorFor({ from: 'my-counter', to: '' });
+    // tagThrowsErrorFor({ from: 'my-counter', to: 'my-extension' });
   });
 
   it('replaces local src class imports (1)', () => {

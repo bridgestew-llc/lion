@@ -113,6 +113,34 @@ function insertImportStatements({ imports, path }) {
   path.node.body = [...imports, ...path.node.body];
 }
 
+function validateChanges(changes) {
+  for (const change of changes) {
+    if (change.tag) {
+      const tagExample = [
+        'Should be example:',
+        '  {',
+        "    from: 'my-counter',",
+        "    to: 'my-extension',",
+        "    paths: [{ from: './my-counter.js', to: './my-extension/my-extension.js' }],",
+        '  }',
+      ];
+
+      const { tag } = change;
+      const errorMsg = [
+        'babel-plugin-extend-docs: The provided tag change is not valid.',
+        `Given: ${JSON.stringify(tag)}`,
+        ...tagExample,
+      ].join('\n');
+      if (typeof tag.from !== 'string' || !tag.from) {
+        throw new Error(errorMsg);
+      }
+      if (typeof tag.to !== 'string' || !tag.to) {
+        throw new Error(errorMsg);
+      }
+    }
+  }
+}
+
 module.exports = ({ types: t }) => ({
   visitor: {
     ImportDeclaration(path, state) {
@@ -158,6 +186,7 @@ module.exports = ({ types: t }) => ({
             `babel-plugin-extend-docs: You need to provide a changes array (string)\nExample: changes: [...]`,
           );
         }
+        validateChanges(state.opts.changes);
 
         state.importedStorage = [];
         state.filePath = '';
