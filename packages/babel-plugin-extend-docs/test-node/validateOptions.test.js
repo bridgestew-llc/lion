@@ -74,15 +74,73 @@ describe('babel-plugin-extend-docs: validateOptions', () => {
     tagThrowsErrorFor({ from: 'my-counter', to: '' });
     tagThrowsErrorFor({ from: 'my-counter', to: 'my-extension' }, [
       'babel-plugin-extend-docs: The provided tag change is not valid.',
-      'The paths array is missing',
+      'The paths array is missing.',
     ]);
     tagThrowsErrorFor({ from: 'my-counter', to: 'my-extension', paths: [] }, [
       'babel-plugin-extend-docs: The provided tag change is not valid.',
-      'The paths array is missing',
+      'The paths array is missing.',
     ]);
-    // tagThrowsErrorFor({ from: 'my-counter', to: 'my-extension', paths: [{}] }, [
-    //   'babel-plugin-extend-docs: The provided tag change is not valid.',
-    //   'The paths array is missing',
-    // ]);
+
+    const pathMsg = [
+      'babel-plugin-extend-docs: The provided tag change is not valid.',
+      'The path object is invalid.',
+    ];
+    const pathSetup = { from: 'my-counter', to: 'my-extension' };
+    tagThrowsErrorFor({ ...pathSetup, paths: [{}] }, pathMsg);
+    tagThrowsErrorFor({ ...pathSetup, paths: [{ from: '' }] }, pathMsg);
+    tagThrowsErrorFor({ ...pathSetup, paths: [{ from: './index.js' }] }, pathMsg);
+    tagThrowsErrorFor({ ...pathSetup, paths: [{ to: '' }] }, pathMsg);
+    tagThrowsErrorFor({ ...pathSetup, paths: [{ to: './index.js' }] }, pathMsg);
+    tagThrowsErrorFor({ ...pathSetup, paths: [{ from: './index.js', to: '' }] }, pathMsg);
+    tagThrowsErrorFor({ ...pathSetup, paths: [{ from: '', to: './index.js' }] }, pathMsg);
+  });
+
+  it('throws if variable change does not have a valid to, from, and paths property', () => {
+    const defaultMsg = ['babel-plugin-extend-docs: The provided variable change is not valid.'];
+    function variableThrowsErrorFor(variable, msg = defaultMsg) {
+      expect(() => {
+        executeBabel('', {
+          rootPath: path.resolve('./'),
+          changes: [{ variable }],
+        });
+      }).to.throw(
+        [
+          ...msg,
+          `Given: ${JSON.stringify(variable)}`,
+          'Should be example:',
+          '  {',
+          "    from: 'MyCounter',",
+          "    to: 'MyExtension',",
+          "    paths: [{ from: './index.js', to: './my-extension/index.js' }],",
+          '  }',
+        ].join('\n'),
+      );
+    }
+
+    variableThrowsErrorFor({});
+    variableThrowsErrorFor({ from: '' });
+    variableThrowsErrorFor({ from: 'my-counter' });
+    variableThrowsErrorFor({ from: 'my-counter', to: '' });
+    variableThrowsErrorFor({ from: 'my-counter', to: 'my-extension' }, [
+      'babel-plugin-extend-docs: The provided variable change is not valid.',
+      'The paths array is missing.',
+    ]);
+    variableThrowsErrorFor({ from: 'my-counter', to: 'my-extension', paths: [] }, [
+      'babel-plugin-extend-docs: The provided variable change is not valid.',
+      'The paths array is missing.',
+    ]);
+
+    const pathMsg = [
+      'babel-plugin-extend-docs: The provided variable change is not valid.',
+      'The path object is invalid.',
+    ];
+    const pathSetup = { from: 'my-counter', to: 'my-extension' };
+    variableThrowsErrorFor({ ...pathSetup, paths: [{}] }, pathMsg);
+    variableThrowsErrorFor({ ...pathSetup, paths: [{ from: '' }] }, pathMsg);
+    variableThrowsErrorFor({ ...pathSetup, paths: [{ from: './index.js' }] }, pathMsg);
+    variableThrowsErrorFor({ ...pathSetup, paths: [{ to: '' }] }, pathMsg);
+    variableThrowsErrorFor({ ...pathSetup, paths: [{ to: './index.js' }] }, pathMsg);
+    variableThrowsErrorFor({ ...pathSetup, paths: [{ from: './index.js', to: '' }] }, pathMsg);
+    variableThrowsErrorFor({ ...pathSetup, paths: [{ from: '', to: './index.js' }] }, pathMsg);
   });
 });
