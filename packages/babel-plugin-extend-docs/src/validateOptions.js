@@ -1,17 +1,37 @@
 const fs = require('fs');
 
+const tagExample = [
+  'Should be example:',
+  '  {',
+  "    from: 'my-counter',",
+  "    to: 'my-extension',",
+  "    paths: [{ from: './my-counter.js', to: './my-extension/my-extension.js' }],",
+  '  }',
+];
+
+function validatePaths(paths, given) {
+  if (!Array.isArray(paths) || (Array.isArray(paths) && paths.length === 0)) {
+    const errorMsg = [
+      'babel-plugin-extend-docs: The provided tag change is not valid.',
+      'The paths array is missing',
+      `Given: ${JSON.stringify(given)}`,
+      ...tagExample,
+    ].join('\n');
+    throw new Error(errorMsg);
+  }
+}
+
 function validateChanges(changes) {
+  if (!Array.isArray(changes) || (Array.isArray(changes) && changes.length === 0)) {
+    const errorMsg = [
+      'babel-plugin-extend-docs: The required changes array is missing.',
+      `Given: ${JSON.stringify(changes)}`,
+      ...tagExample,
+    ].join('\n');
+    throw new Error(errorMsg);
+  }
   for (const change of changes) {
     if (change.tag) {
-      const tagExample = [
-        'Should be example:',
-        '  {',
-        "    from: 'my-counter',",
-        "    to: 'my-extension',",
-        "    paths: [{ from: './my-counter.js', to: './my-extension/my-extension.js' }],",
-        '  }',
-      ];
-
       const { tag } = change;
       const errorMsg = [
         'babel-plugin-extend-docs: The provided tag change is not valid.',
@@ -24,6 +44,8 @@ function validateChanges(changes) {
       if (typeof tag.to !== 'string' || !tag.to) {
         throw new Error(errorMsg);
       }
+
+      validatePaths(tag.paths, tag);
     }
   }
 }
@@ -47,12 +69,6 @@ function validateOptions(options) {
       );
     }
   }
-  if (!options.changes) {
-    throw new Error(
-      `babel-plugin-extend-docs: You need to provide a changes array (string)\nExample: changes: [...]`,
-    );
-  }
-
   validateChanges(options.changes);
 }
 
